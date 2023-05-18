@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <title>Landmarks detection</title>
+</head>
+
+<body>
+    <div class="container">
+        <div style="text-align: center;">
+            <input type="file" id="fileInput"><br><br>
+            <video id="videoDisplay" width="400" autoplay></video><br>
+            <canvas class="output_canvas"></canvas>
+        </div>
+    </div>
+
+    <script type="module">
+        const canvasElement = document.getElementsByClassName('output_canvas')[0];
+        const canvasCtx = canvasElement.getContext('2d');
+
+        // Get file input element and image display element
+        const fileInput = document.getElementById('fileInput');
+        const videoDisplay = document.getElementById('videoDisplay');
+
+        // Add event listener to file input element
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+
+            // Create FileReader object
+            const reader = new FileReader();
+
+            // Set onload event handler for FileReader
+            reader.onload = (e) => {
+                const faceMesh = new FaceMesh({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                    }
+                });
+
+                faceMesh.setOptions({
+                    maxNumFaces: 1,
+                    refineLandmarks: true,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                faceMesh.onResults(results => onResults(results));
+
+                // Check if file type is a video
+                if (file.type.startsWith('video/')) {
+                    // Set video display source to the loaded data URL
+                    videoDisplay.src = e.target.result;
+                    videoDisplay.load();
+                    videoDisplay.onloadeddata = () => {
+                        // Display the video
+                        videoDisplay.style.display = 'inline';
+                        //output canvas dimension
+                        canvasElement.height = 2 * videoDisplay.offsetHeight;
+                        canvasElement.width = 2 * videoDisplay.offsetWidth;
+                        // Add event listener for video loaded data
+                        async function drawVideoFrame() {
+                            await faceMesh.send({ image: videoDisplay });
+                            if (!videoDisplay.ended) {
+                                requestAnimationFrame(drawVideoFrame);
+                            }
+                        }
+                        drawVideoFrame();
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(
+                results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiFaceLandmarks) {
+                for (const landmarks of results.multiFaceLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
+                        { color: '#C0C0C070', lineWidth: 1 });
+                }
+            }
+            canvasCtx.restore();
+
+        }
+    </script>
+</body>
+
+</html>

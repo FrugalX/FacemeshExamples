@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <title>Landmarks detection</title>
+</head>
+
+<body>
+    <div class="container">
+        <div style="text-align: center;">
+            <input type="file" id="fileInput"><br><br>
+            <img id="imageDisplay"><br>
+            <canvas class="output_canvas"></canvas>
+        </div>
+    </div>
+
+    <script type="module">
+        const canvasElement = document.getElementsByClassName('output_canvas')[0];
+        const canvasCtx = canvasElement.getContext('2d');
+
+        // Get file input element and image display element
+        const fileInput = document.getElementById('fileInput');
+        const imageDisplay = document.getElementById('imageDisplay');
+
+        // Add event listener to file input element
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+
+            // Create FileReader object
+            const reader = new FileReader();
+
+            // Set onload event handler for FileReader
+            reader.onload = (e) => {
+                const faceMesh = new FaceMesh({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                    }
+                });
+
+                faceMesh.setOptions({
+                    maxNumFaces: 1,
+                    refineLandmarks: true,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                faceMesh.onResults(results => onResults(results));
+
+                // Check if file type is an image
+                if (file.type.startsWith('image/')) {
+                    // Set image display source to the loaded data URL
+                    imageDisplay.onload = () => {
+                        canvasElement.height = imageDisplay.clientHeight;
+                        canvasElement.width = imageDisplay.clientWidth;
+                        // Send image to faceMesh (example)
+                        faceMesh.send({ image: imageDisplay });
+                    }
+                    imageDisplay.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(
+                results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiFaceLandmarks) {
+                for (const landmarks of results.multiFaceLandmarks) {
+                    drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION,
+                        { color: '#C0C0C070', lineWidth: 1 });
+                }
+            }
+            canvasCtx.restore();
+
+        }
+    </script>
+</body>
+
+</html>
