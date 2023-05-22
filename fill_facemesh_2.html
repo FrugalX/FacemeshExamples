@@ -9,7 +9,7 @@
         crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-    <title>Facemesh draw</title>
+    <title>Facemesh Fill with Face Culling</title>
 </head>
 
 <body>
@@ -59,8 +59,8 @@
                 if (file.type.startsWith('image/')) {
                     // Set image display source to the loaded data URL
                     imageDisplay.onload = () => {
-                        canvasElement.height = zoomFactor*imageDisplay.clientHeight;
-                        canvasElement.width = zoomFactor*imageDisplay.clientWidth;
+                        canvasElement.height = zoomFactor * imageDisplay.clientHeight;
+                        canvasElement.width = zoomFactor * imageDisplay.clientWidth;
                         // Send image to faceMesh (example)
                         faceMesh.send({ image: imageDisplay });
                     }
@@ -83,15 +83,26 @@
                     for (const landmark of landmarks) {
                         coords.push({ x: parseInt(landmark.x * canvasElement.width), y: parseInt(landmark.y * canvasElement.height) });
                     }
-                    canvasCtx.strokeStyle = "#B7DAFD";
+                    canvasCtx.fillStyle = "rgba(183, 218, 253, 0.5)";
+                    canvasCtx.strokeStyle = "rgba(183, 218, 253, 0.05)";
                     canvasCtx.lineWidth = 1;
+                    canvasCtx.imageSmoothingEnabled = false;
                     for (let i = 0; i < FACEMESH.length; i += 3) {
-                        canvasCtx.beginPath();
-                        canvasCtx.moveTo(coords[FACEMESH[i]].x, coords[FACEMESH[i]].y);
-                        canvasCtx.lineTo(coords[FACEMESH[i + 1]].x, coords[FACEMESH[i + 1]].y);
-                        canvasCtx.lineTo(coords[FACEMESH[i + 2]].x, coords[FACEMESH[i + 2]].y);
-                        canvasCtx.closePath();
-                        canvasCtx.stroke();
+                        // Compute the area and use the sign of the area for back face culling
+                        let area = 0;
+                        area += coords[FACEMESH[i]].x * coords[FACEMESH[i + 1]].y - coords[FACEMESH[i + 1]].x * coords[FACEMESH[i]].y;
+                        area += coords[FACEMESH[i + 1]].x * coords[FACEMESH[i + 2]].y - coords[FACEMESH[i + 2]].x * coords[FACEMESH[i + 1]].y;
+                        area += coords[FACEMESH[i + 2]].x * coords[FACEMESH[i]].y - coords[FACEMESH[i]].x * coords[FACEMESH[i + 2]].y;
+                        // area /= 2;
+                        if (area < 0) {
+                            canvasCtx.beginPath();
+                            canvasCtx.moveTo(coords[FACEMESH[i]].x, coords[FACEMESH[i]].y);
+                            canvasCtx.lineTo(coords[FACEMESH[i + 1]].x, coords[FACEMESH[i + 1]].y);
+                            canvasCtx.lineTo(coords[FACEMESH[i + 2]].x, coords[FACEMESH[i + 2]].y);
+                            canvasCtx.closePath();
+                            canvasCtx.fill();
+                            canvasCtx.stroke();
+                        }
                     }
                 }
             }

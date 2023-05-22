@@ -9,7 +9,7 @@
         crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
 
-    <title>Facemesh draw</title>
+    <title>Facemesh Fill with Face Culling</title>
 </head>
 
 <body>
@@ -83,14 +83,17 @@
                     for (const landmark of landmarks) {
                         coords.push({ x: parseInt(landmark.x * canvasElement.width), y: parseInt(landmark.y * canvasElement.height) });
                     }
-                    canvasCtx.strokeStyle = "#B7DAFD";
+                    canvasCtx.fillStyle = "rgba(183, 218, 253, 0.5)";
+                    canvasCtx.strokeStyle = "rgba(183, 218, 253, 0.05)";
                     canvasCtx.lineWidth = 1;
+                    canvasCtx.imageSmoothingEnabled = false;
                     for (let i = 0; i < FACEMESH.length; i += 3) {
                         canvasCtx.beginPath();
                         canvasCtx.moveTo(coords[FACEMESH[i]].x, coords[FACEMESH[i]].y);
                         canvasCtx.lineTo(coords[FACEMESH[i + 1]].x, coords[FACEMESH[i + 1]].y);
                         canvasCtx.lineTo(coords[FACEMESH[i + 2]].x, coords[FACEMESH[i + 2]].y);
                         canvasCtx.closePath();
+                        canvasCtx.fill();
                         canvasCtx.stroke();
                     }
                 }

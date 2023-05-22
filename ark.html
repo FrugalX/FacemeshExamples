@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+  <div class="container">
+    <input type="file" id="file-input">
+    <br>
+    <canvas id="output-canvas" width="640" height="480"></canvas>
+  </div>
+
+  <script type="module">
+    const canvas = document.getElementById("output-canvas");
+    const ctx = canvas.getContext("2d");
+
+    const faceMesh = new FaceMesh({
+      locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+      },
+    });
+    faceMesh.setOptions({
+      maxNumFaces: 1,
+      refineLandmarks: true,
+      minDetectionConfidence: 0.5,
+      minTrackingConfidence: 0.5,
+    });
+
+    function onResults(results) {
+      ctx.save();
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height);
+
+      if (results.multiFaceLandmarks) {
+        for (const faceLandmarks of results.multiFaceLandmarks) {
+          const coordinates = [];
+          for (const landmark of faceLandmarks) {
+            coordinates.push({ x: parseInt(landmark.x * canvas.width), y: parseInt(landmark.y * canvas.height) });
+          }
+
+          if (coordinates.length > 0) {
+            ctx.strokeStyle = "#FF0000";
+            ctx.lineWidth = 1;
+
+            for (const [index1, index2] of FACEMESH_TESSELATION) {
+              const [x1, y1] = [coordinates[index1].x, coordinates[index1].y];
+              const [x2, y2] = [coordinates[index2].x, coordinates[index2].y];
+
+              ctx.beginPath();
+              ctx.moveTo(x1, y1);
+              ctx.lineTo(x2, y2);
+              ctx.stroke();
+            }
+          }
+        }
+      }
+
+      ctx.restore();
+    }
+
+    const fileInput = document.getElementById("file-input");
+    let image = new Image();
+    fileInput.addEventListener("change", (event) => {
+      image.onload = async () => {
+        await faceMesh.send({ image });
+      };
+      const file = event.target.files[0];
+      if (file) {
+        image.src = URL.createObjectURL(file);
+      }
+    });
+
+    faceMesh.onResults(onResults);
+  </script>
+</body>
+
+</html>
