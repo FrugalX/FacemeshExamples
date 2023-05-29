@@ -12,26 +12,66 @@
 <body>
   <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
   <script type="importmap">
-      {
-        "imports": {
-          "three": "https://unpkg.com/three@v0.152.2/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@<0.152.2/examples/jsm/"
-        }
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@v0.152.2/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@<0.152.2/examples/jsm/"
       }
-    </script>
+    }
+  </script>
   <script type="module">
-    import * as THREE from 'three';
-    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js";
+    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/controls/OrbitControls.js';
+    import { OBJLoader } from "https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/loaders/OBJLoader.js";
 
+    // Create the scene
     const scene = new THREE.Scene();
+
+    // Create the renderer
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize(500, 500);
+    document.body.appendChild(renderer.domElement);
+
+    // Create the OBJLoader
     const loader = new OBJLoader();
+
+    // Load the OBJ file and add it to the scene
     loader.load(
       'assets/canonical_face_model.obj',
-      function (object) {
-        console.log(object);
-        scene.add(object);
+      function (obj) {
+        var bbox = new THREE.Box3().setFromObject(obj);
+        console.log(bbox);
+        obj.traverse(function (child) {
+            if (child instanceof THREE.Mesh) {
+                child.material = material;
+            }
+        });
+        scene.add(obj);
       }
-    )
+    );
+    
+    // Create the camera
+    const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 10. -10); // see bbox at line 43 to decide the camera parameters
+    camera.position.x = -15;
+    const material = new THREE.MeshBasicMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
+
+    // Create a directional light and add it to the scene
+    const light = new THREE.DirectionalLight(0x00ffff, 1);
+    light.position.set(0, 0, 20);
+    scene.add(light);
+
+    // Create the OrbitControls for camera movement
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.autoRotate = true;
+
+    // Animation function to update and render the scene continuously
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update(); // Update the OrbitControls state
+      renderer.render(scene, camera); // Render the scene with the camera
+    }
+
+    animate(); // Start the animation loop
   </script>
 </body>
 
