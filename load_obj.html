@@ -42,21 +42,55 @@
         var bbox = new THREE.Box3().setFromObject(obj);
         console.log(bbox);
         obj.traverse(function (child) {
-            if (child instanceof THREE.Mesh) {
-                child.material = material;
-            }
+          if (child instanceof THREE.Mesh) {
+            // Create and assign appropriate material for the face
+
+            // Basic Material (Flat color)
+            // const material = new THREE.MeshBasicMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
+
+            // Phong Material (Shiny appearance)
+            // const material = new THREE.MeshPhongMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
+
+            // Lambert Material (Diffuse reflection)
+           const material = new THREE.MeshLambertMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
+
+            // Enable smooth shading
+            child.geometry.computeVertexNormals();
+
+            child.material = material;
+          }
         });
         scene.add(obj);
       }
     );
-    
+
     // Create the camera
-    const camera = new THREE.OrthographicCamera(-10, 10, 10, -10, 10. -10); // see bbox at line 43 to decide the camera parameters
-    camera.position.x = -15;
-    const material = new THREE.MeshBasicMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
+    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    camera.position.z = 20;
 
     // Create a directional light and add it to the scene
-    const light = new THREE.DirectionalLight(0x00ffff, 1);
+
+    // Ambient Light (Uniform lighting)
+    // const light = new THREE.AmbientLight(0xffffff, 0.5);
+    // scene.add(ambientLight);
+
+    // Directional Light (Simulates sunlight)
+    // const light = new THREE.DirectionalLight(0xffffff, 1);
+    // light.position.set(0, 0, 20);
+    // scene.add(light);
+
+    // Point Light (Light originating from a point)
+    // const light = new THREE.PointLight(0xffffff, 1, 100);
+    // light.position.set(0, 0, 20);
+    // scene.add(light);
+
+    // Spot Light (Light emitted in a cone shape)
+    // const light = new THREE.SpotLight(0xffffff, 1);
+    // light.position.set(0, 0, 20);
+    // scene.add(light);
+
+    // Hemisphere Light (Simulates sky light)
+    const light = new THREE.HemisphereLight(0xffffff, 0x0000ff, 1);
     light.position.set(0, 0, 20);
     scene.add(light);
 
