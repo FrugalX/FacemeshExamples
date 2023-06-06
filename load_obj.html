@@ -23,6 +23,7 @@
     import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.118/build/three.module.js";
     import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/controls/OrbitControls.js';
     import { OBJLoader } from "https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/loaders/OBJLoader.js";
+    import { BufferGeometryUtils } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/utils/BufferGeometryUtils.js';
 
     // Create the scene
     const scene = new THREE.Scene();
@@ -49,12 +50,13 @@
             // const material = new THREE.MeshBasicMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
 
             // Phong Material (Shiny appearance)
-            // const material = new THREE.MeshPhongMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
+            const material = new THREE.MeshPhongMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
 
             // Lambert Material (Diffuse reflection)
-           const material = new THREE.MeshLambertMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
+            // const material = new THREE.MeshLambertMaterial({ color: 0xffddcc, side: THREE.DoubleSide });
 
             // Enable smooth shading
+            child.geometry = BufferGeometryUtils.mergeVertices(child.geometry, 0.05);
             child.geometry.computeVertexNormals();
 
             child.material = material;
