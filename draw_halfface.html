@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+    <title>Facemesh draw</title>
+</head>
+
+<body>
+    <div class="container">
+        <div style="text-align: center;">
+            <input type="file" id="fileInput"><br><br>
+            <img id="imageDisplay"><br>
+            <canvas class="output_canvas"></canvas>
+        </div>
+    </div>
+
+    <script src="./facemesh.js"></script>
+    <script type="module">
+        const canvasElement = document.getElementsByClassName('output_canvas')[0];
+        const canvasCtx = canvasElement.getContext('2d');
+
+        // Get file input element and image display element
+        const fileInput = document.getElementById('fileInput');
+        const imageDisplay = document.getElementById('imageDisplay');
+        const zoomFactor = 2;
+        const side = "both"; // valid values: "both", "left", "right"
+
+        // Add event listener to file input element
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+
+            // Create FileReader object
+            const reader = new FileReader();
+
+            // Set onload event handler for FileReader
+            reader.onload = (e) => {
+                const faceMesh = new FaceMesh({
+                    locateFile: (file) => {
+                        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+                    }
+                });
+
+                faceMesh.setOptions({
+                    maxNumFaces: 1,
+                    refineLandmarks: true,
+                    minDetectionConfidence: 0.5,
+                    minTrackingConfidence: 0.5
+                });
+
+                faceMesh.onResults(results => onResults(results));
+
+                // Check if file type is an image
+                if (file.type.startsWith('image/')) {
+                    // Set image display source to the loaded data URL
+                    imageDisplay.onload = () => {
+                        canvasElement.height = zoomFactor * imageDisplay.clientHeight;
+                        canvasElement.width = zoomFactor * imageDisplay.clientWidth;
+                        // Send image to faceMesh (example)
+                        faceMesh.send({ image: imageDisplay });
+                    }
+                    imageDisplay.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function onResults(results) {
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(
+                results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiFaceLandmarks) {
+                for (const landmarks of results.multiFaceLandmarks) {
+                    // drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, { color: '#C0C0C070', lineWidth: 1 });
+                    const coords = [];
+                    for (const landmark of landmarks) {
+                        coords.push({ x: parseInt(landmark.x * canvasElement.width), y: parseInt(landmark.y * canvasElement.height) });
+                    }
+                    canvasCtx.lineWidth = 1;
+                    let totalFaces = FACEMESH.length / 3;
+
+                    if (side === "both" || side === "left") {
+                        canvasCtx.strokeStyle = "#B7DAFD";
+                        for (let i = 0; i < 3 * totalFaces / 2; i += 3) {
+                            canvasCtx.beginPath();
+                            canvasCtx.moveTo(coords[FACEMESH[i]].x, coords[FACEMESH[i]].y);
+                            canvasCtx.lineTo(coords[FACEMESH[i + 1]].x, coords[FACEMESH[i + 1]].y);
+                            canvasCtx.lineTo(coords[FACEMESH[i + 2]].x, coords[FACEMESH[i + 2]].y);
+                            canvasCtx.closePath();
+                            canvasCtx.stroke();
+                        }
+                    }
+
+                    if (side === "both" || side === "right") {
+                        canvasCtx.strokeStyle = "#DAFDB7";
+                        for (let i = 3 * totalFaces / 2; i < 3 * totalFaces; i += 3) {
+                            canvasCtx.beginPath();
+                            canvasCtx.moveTo(coords[FACEMESH[i]].x, coords[FACEMESH[i]].y);
+                            canvasCtx.lineTo(coords[FACEMESH[i + 1]].x, coords[FACEMESH[i + 1]].y);
+                            canvasCtx.lineTo(coords[FACEMESH[i + 2]].x, coords[FACEMESH[i + 2]].y);
+                            canvasCtx.closePath();
+                            canvasCtx.stroke();
+                        }
+                    }
+                }
+            }
+            canvasCtx.restore();
+
+        }
+    </script>
+</body>
+
+</html>
