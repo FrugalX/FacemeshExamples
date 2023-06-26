@@ -108,27 +108,15 @@
             scene.add(mesh);
 
             mesh.geometry.computeBoundingSphere();
-            let fov = 3 * Math.atan(mesh.geometry.boundingSphere.radius / camDistance) * (180 / Math.PI);
+            let fov = 4 * Math.atan(0.15 / camDistance) * (180 / Math.PI); // 0.15 is a hack for bounding sphere's radius at the normal distance of 2 ft between camera and face
 
             // Create the threejsCamera
             threejsCamera = new THREE.PerspectiveCamera(fov, 1, 0.1, 1000);
-            threejsCamera.position.x = mesh.geometry.boundingSphere.center.x;
+            threejsCamera.position.x = 0.5;
             threejsCamera.position.y = mesh.geometry.boundingSphere.center.y;
             threejsCamera.position.z = camDistance;
 
-            // Create the OrbitControls for threejsCamera movement
-            const controls = new OrbitControls(threejsCamera, renderer.domElement);
-            controls.autoRotate = true;
-            controls.target = mesh.geometry.boundingSphere.center;
-
-            // Animation function to update and render the scene continuously
-            function animate() {
-                requestAnimationFrame(animate);
-                controls.update();
-                renderer.render(scene, threejsCamera);
-            }
-
-            animate();
+            renderer.render(scene, threejsCamera);
         }
 
         const faceMesh = new FaceMesh({
